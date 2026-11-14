@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบ IoT เพื่อการศึกษาในประเทศไทย</title>
+    <!-- โหลด Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- โหลดฟอนต์ภาษาไทย Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- โหลดไอคอน Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            min-height: 100vh;
+        }
+
+        /* เอฟเฟกต์พลิกการ์ด 3 มิติ */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col justify-between">
+
+    <!-- ส่วนหัวของเว็บไซต์ -->
+    <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-20 border-b border-indigo-100">
+        <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-center gap-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md shadow-indigo-200">
+                <i data-lucide="cpu" class="w-6 h-6"></i>
+            </div>
+            <h1 class="font-bold text-lg sm:text-xl text-slate-900">ระบบ IoT เพื่อการศึกษาในประเทศไทย</h1>
+        </div>
+    </header>
+
+    <!-- เนื้อหาหลัก -->
+    <main class="flex-grow max-w-3xl w-full mx-auto px-4 py-6 sm:py-10 flex flex-col items-center">
+
+        <!-- แถบสลับโหมด -->
+        <div class="bg-white p-1.5 rounded-2xl shadow-sm border border-indigo-100 flex w-full max-w-md mb-8">
+            <button id="tab-flashcard" onclick="switchMode('flashcard')" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm cursor-pointer">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>แฟลชการ์ด</span>
+            </button>
+            <button id="tab-quiz" onclick="switchMode('quiz')" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all text-slate-600 hover:text-indigo-600 cursor-pointer">
+                <i data-lucide="help-circle" class="w-4 h-4"></i>
+                <span>แบบทดสอบ</span>
+            </button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ส่วนที่ 1: โหมดแฟลชการ์ด (FLASHCARD MODE) -->
+        <!-- ========================================== -->
+        <section id="section-flashcard" class="w-full flex flex-col items-center">
+            <!-- ตัวนับจำนวนข้อ -->
+            <div class="w-full max-w-xl flex items-center justify-between mb-3 px-1">
+                <span class="text-sm font-semibold text-indigo-700 bg-indigo-100/80 px-3.5 py-1 rounded-full">
+                    ข้อ <span id="fc-counter">1/10</span>
+                </span>
+                <span class="text-xs text-slate-500 flex items-center gap-1">
+                    <i data-lucide="touchpad" class="w-3.5 h-3.5"></i> คลิกที่การ์ดเพื่อพลิก
+                </span>
+            </div>
+
+            <!-- การ์ด 3 มิติ -->
+            <div class="w-full max-w-xl h-72 sm:h-80 perspective-1000 cursor-pointer mb-6" onclick="flipCard()">
+                <div id="flashcard-inner" class="relative w-full h-full transform-style-3d shadow-xl rounded-3xl">
+                    
+                    <!-- ด้านหน้าการ์ด (คำศัพท์/หัวข้อ) -->
+                    <div class="absolute inset-0 backface-hidden bg-white rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center text-center border-2 border-indigo-50">
+                        <span class="text-xs font-semibold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full mb-4">
+                            คำศัพท์ / หัวข้อ
+                        </span>
+                        <h2 id="fc-front-text" class="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed">
+                            กำลังโหลด...
+                        </h2>
+                    </div>
+
+                    <!-- ด้านหลังการ์ด (ความหมาย) -->
+                    <div class="absolute inset-0 backface-hidden card-back bg-gradient-to-br from-indigo-600 to-blue-700 text-white rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-inner">
+                        <span class="text-xs font-semibold text-indigo-200 bg-white/15 px-3 py-1 rounded-full mb-4">
+                            ความหมาย
+                        </span>
+                        <p id="fc-back-text" class="text-base sm:text-lg font-normal leading-relaxed">
+                            กำลังโหลด...
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ปุ่มเลื่อนซ้าย-ขวา -->
+            <div class="flex items-center justify-center gap-4 w-full max-w-xl">
+                <button id="btn-prev-card" onclick="prevCard()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none text-slate-700 font-medium py-3 px-6 rounded-2xl shadow-sm border border-slate-200 transition cursor-pointer">
+                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    <span>ก่อนหน้า</span>
+                </button>
+
+                <button onclick="flipCard()" class="flex items-center justify-center gap-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-semibold py-3 px-5 rounded-2xl transition cursor-pointer">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    <span class="hidden sm:inline">พลิกการ์ด</span>
+                </button>
+
+                <button id="btn-next-card" onclick="nextCard()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:pointer-events-none text-white font-medium py-3 px-6 rounded-2xl shadow-md shadow-indigo-200 transition cursor-pointer">
+                    <span>ถัดไป</span>
+                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- ส่วนที่ 2: โหมดแบบทดสอบ (QUIZ MODE)       -->
+        <!-- ========================================== -->
+        <section id="section-quiz" class="w-full max-w-xl hidden">
+            
+            <!-- พื้นที่ทำข้อสอบ -->
+            <div id="quiz-play-area" class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-50">
+                <!-- แถบสถานะ -->
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-semibold text-indigo-700 bg-indigo-50 px-3.5 py-1 rounded-full">
+                        ข้อที่ <span id="quiz-current-num">1</span>/10
+                    </span>
+                    <span class="text-sm font-semibold text-emerald-700 bg-emerald-50 px-3.5 py-1 rounded-full">
+                        คะแนน: <span id="quiz-score">0</span>
+                    </span>
+                </div>
+
+                <!-- แถบความคืบหน้า -->
+                <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
+                    <div id="quiz-progress-bar" class="bg-indigo-600 h-full transition-all duration-300" style="width: 10%"></div>
+                </div>
+
+                <!-- โจทย์คำถาม -->
+                <h2 id="quiz-question-text" class="text-lg sm:text-xl font-bold text-slate-800 mb-6 leading-relaxed">
+                    กำลังโหลดคำถาม...
+                </h2>
+
+                <!-- ตัวเลือก 4 ข้อ -->
+                <div id="quiz-options-container" class="space-y-3 mb-6"></div>
+
+                <!-- กล่องแสดงเฉลย -->
+                <div id="quiz-feedback" class="hidden rounded-2xl p-4 mb-6 text-sm">
+                    <div class="flex items-start gap-3">
+                        <div id="feedback-icon" class="mt-0.5"></div>
+                        <div>
+                            <p id="feedback-title" class="font-bold text-base mb-1"></p>
+                            <p id="feedback-explanation" class="text-slate-600 leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ปุ่มข้อถัดไป -->
+                <button id="btn-next-question" onclick="nextQuestion()" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span id="btn-next-q-text">ข้อถัดไป</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- หน้าจอสรุปคะแนน -->
+            <div id="quiz-result-area" class="hidden bg-white rounded-3xl p-8 shadow-xl border border-indigo-50 text-center">
+                <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <i data-lucide="award" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">สรุปผลคะแนน</h2>
+                <p id="result-message" class="text-slate-500 mb-6"></p>
+
+                <div class="bg-slate-50 rounded-2xl p-6 mb-8 border border-slate-100">
+                    <p class="text-sm text-slate-500 mb-1">คะแนนที่ได้</p>
+                    <div class="text-4xl font-extrabold text-indigo-600">
+                        <span id="final-score">0</span> <span class="text-xl font-medium text-slate-400">/ 10</span>
+                    </div>
+                </div>
+
+                <button onclick="restartQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    <span>เริ่มทำใหม่</span>
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- สคริปต์การทำงาน -->
+    <script>
+        // ข้อมูลทั้ง 10 ข้อตามเนื้อหาที่กำหนด
+        const iotData = [
+            {
+                term: "แนวทางการเรียนรู้ IoT ในไทย",
+                meaning: "เน้นการเรียนรู้ผ่านการลงมือปฏิบัติและการสร้างชิ้นงานต้นแบบ (เช่น KidBright, ESP32) เพื่อแก้ปัญหาใกล้ตัว",
+                question: "แนวทางการเรียนรู้ระบบ IoT ในประเทศไทยมุ่งเน้นรูปแบบใดเป็นสำคัญ?",
+                answer: "เน้นการเรียนรู้ผ่านการลงมือปฏิบัติและการสร้างชิ้นงานต้นแบบ (เช่น KidBright, ESP32) เพื่อแก้ปัญหาใกล้ตัว",
+                options: [
+                    "เน้นการเรียนรู้ผ่านการลงมือปฏิบัติและการสร้างชิ้นงานต้นแบบ (เช่น KidBright, ESP32) เพื่อแก้ปัญหาใกล้ตัว",
+                    "เน้นการท่องจำทฤษฎีโครงสร้างเซิร์ฟเวอร์ขนาดใหญ่เพียงอย่างเดียว",
+                    "เน้นการเขียนโปรแกรมควบคุมเครื่องจักรกลหนักในโรงงานอุตสาหกรรมเท่านั้น",
+                    "เน้นการประกอบชิ้นส่วนชิปประมวลผลด้วยตนเองตั้งแต่ระดับฐานราก"
+                ]
+            },
+            {
+                term: "เซนเซอร์ (Sensors)",
+                meaning: "อุปกรณ์รับค่าทางกายภาพจากสภาพแวดล้อม (เช่น เซนเซอร์วัดความชื้นในดิน) แล้วแปลงเป็นสัญญาณดิจิทัล",
+                question: "อุปกรณ์ใดทำหน้าที่รับค่าทางกายภาพจากสภาพแวดล้อมแล้วแปลงเป็นสัญญาณดิจิทัล?",
+                answer: "เซนเซอร์ (Sensors) เช่น เซนเซอร์วัดความชื้นในดิน",
+                options: [
+                    "เซนเซอร์ (Sensors) เช่น เซนเซอร์วัดความชื้นในดิน",
+                    "ตัวสั่งการ (Actuators) เช่น รีเลย์",
+                    "แพลตฟอร์มคลาวด์สำหรับเก็บข้อมูล",
+                    "ระบบความปลอดภัยของเครือข่าย"
+                ]
+            },
+            {
+                term: "ตัวสั่งการ (Actuators)",
+                meaning: "อุปกรณ์รับคำสั่งจากบอร์ดควบคุมเพื่อทำงานทางกายภาพ เช่น รีเลย์ (Relay) หรือลำโพงบัซเซอร์ (Buzzer)",
+                question: "ข้อใดคือตัวอย่างของตัวสั่งการ (Actuators) ที่รับคำสั่งจากบอร์ดควบคุมเพื่อทำงานทางกายภาพ?",
+                answer: "รีเลย์ (Relay) หรือลำโพงบัซเซอร์ (Buzzer)",
+                options: [
+                    "รีเลย์ (Relay) หรือลำโพงบัซเซอร์ (Buzzer)",
+                    "เซนเซอร์วัดความชื้นในดิน",
+                    "แพลตฟอร์มคลาวด์ NETPIE",
+                    "แอปพลิเคชัน LINE Notify"
+                ]
+            },
+            {
+                term: "ระบบเครือข่ายในห้องเรียน",
+                meaning: "การใช้ Wi-Fi หรือเราเตอร์แยก เพื่อหลีกเลี่ยงข้อจำกัดและระบบความปลอดภัย (Firewall) ของเครือข่ายกลางโรงเรียน",
+                question: "เหตุใดในการจัดการเรียนรู้ IoT ในห้องเรียนจึงนิยมใช้ Wi-Fi หรือเราเตอร์แยก?",
+                answer: "เพื่อหลีกเลี่ยงข้อจำกัดและระบบความปลอดภัย (Firewall) ของเครือข่ายกลางโรงเรียน",
+                options: [
+                    "เพื่อหลีกเลี่ยงข้อจำกัดและระบบความปลอดภัย (Firewall) ของเครือข่ายกลางโรงเรียน",
+                    "เพราะบอร์ดไมโครคอนโทรลเลอร์ไม่สามารถรับสัญญาณอินเทอร์เน็ตความเร็วสูงได้",
+                    "เพื่อป้องกันไม่ให้นักเรียนเข้าถึงเว็บไซต์ค้นหาข้อมูลทั่วไป",
+                    "เพราะเครือข่ายกลางโรงเรียนรองรับเฉพาะการเชื่อมต่อผ่านสายเท่านั้น"
+                ]
+            },
+            {
+                term: "Edge Processing",
+                meaning: "การประมวลผลข้อมูลบนตัวบอร์ดไมโครคอนโทรลเลอร์โดยตรง ทำให้ระบบทำงานได้ทันทีแม้สัญญาณอินเทอร์เน็ตขัดข้อง",
+                question: "ข้อดีสำคัญของ Edge Processing ในระบบ IoT คืออะไร?",
+                answer: "ประมวลผลบนตัวบอร์ดโดยตรง ทำให้ระบบทำงานได้ทันทีแม้สัญญาณอินเทอร์เน็ตขัดข้อง",
+                options: [
+                    "ประมวลผลบนตัวบอร์ดโดยตรง ทำให้ระบบทำงานได้ทันทีแม้สัญญาณอินเทอร์เน็ตขัดข้อง",
+                    "สามารถเก็บข้อมูลย้อนหลังได้ไม่จำกัดบนพื้นที่จัดเก็บออนไลน์",
+                    "ส่งข้อความแจ้งเตือนเข้าสมาร์ตโฟนได้โดยไม่ต้องเขียนโค้ด",
+                    "ช่วยเพิ่มความเร็วของสัญญาณอินเทอร์เน็ตในห้องเรียน"
+                ]
+            },
+            {
+                term: "NETPIE",
+                meaning: "แพลตฟอร์มคลาวด์สำหรับ IoT ที่พัฒนาขึ้นโดยคนไทย นิยมใช้เก็บข้อมูลและแสดงผลสำหรับโครงงานนักเรียน",
+                question: "แพลตฟอร์มคลาวด์สำหรับ IoT ใดที่พัฒนาขึ้นโดยคนไทยและนิยมใช้เก็บข้อมูลและแสดงผลในโครงงานนักเรียน?",
+                answer: "NETPIE",
+                options: [
+                    "NETPIE",
+                    "LINE Notify",
+                    "KidBright",
+                    "Telegram Bot"
+                ]
+            },
+            {
+                term: "LINE Notify / Telegram Bot",
+                meaning: "เทคโนโลยีเชื่อมต่อเพื่อส่งข้อความแจ้งเตือนเข้าสมาร์ตโฟนส่วนตัวทันทีเมื่อเกิดเหตุการณ์ที่กำหนด",
+                question: "หากต้องการให้ระบบ IoT ส่งข้อความแจ้งเตือนเข้าสมาร์ตโฟนส่วนตัวทันทีเมื่อเกิดเหตุการณ์ที่กำหนด ควรเลือกใช้เทคโนโลยีใด?",
+                answer: "LINE Notify / Telegram Bot",
+                options: [
+                    "LINE Notify / Telegram Bot",
+                    "Bluetooth / คลื่นวิทยุ",
+                    "Edge Processing",
+                    "เซนเซอร์วัดความชื้นในดิน"
+                ]
+            },
+            {
+                term: "การสื่อสารระยะใกล้",
+                meaning: "การใช้สัญญาณ Bluetooth หรือคลื่นวิทยุ เพื่อให้บอร์ดไมโครคอนโทรลเลอร์สื่อสารกันเองภายในห้องเรียน",
+                question: "การสื่อสารระยะใกล้ระหว่างบอร์ดไมโครคอนโทรลเลอร์ด้วยกันเองภายในห้องเรียนมักใช้วิธีใด?",
+                answer: "การใช้สัญญาณ Bluetooth หรือคลื่นวิทยุ",
+                options: [
+                    "การใช้สัญญาณ Bluetooth หรือคลื่นวิทยุ",
+                    "การส่งข้อมูลผ่านระบบคลาวด์ข้ามประเทศ",
+                    "การใช้ระบบแจ้งเตือนผ่าน LINE Notify",
+                    "การเชื่อมต่อผ่านเครือข่ายกลางโรงเรียน"
+                ]
+            },
+            {
+                term: "Cloud Analytics",
+                meaning: "การส่งข้อมูลย้อนหลังขึ้นคลาวด์เพื่อนำไปพล็อตกราฟเปรียบเทียบและวิเคราะห์แนวโน้ม",
+                question: "Cloud Analytics มีบทบาทสำคัญอย่างไรในระบบ IoT?",
+                answer: "นำข้อมูลย้อนหลังที่ส่งขึ้นคลาวด์ไปพล็อตกราฟเปรียบเทียบและวิเคราะห์แนวโน้ม",
+                options: [
+                    "นำข้อมูลย้อนหลังที่ส่งขึ้นคลาวด์ไปพล็อตกราฟเปรียบเทียบและวิเคราะห์แนวโน้ม",
+                    "สั่งตัดต่อกระแสไฟฟ้าแทนการทำงานของรีเลย์",
+                    "รับค่าทางกายภาพจากสภาพแวดล้อมแทนเซนเซอร์",
+                    "สร้างสัญญาณ Wi-Fi แยกเฉพาะในห้องเรียน"
+                ]
+            },
+            {
+                term: "องค์ประกอบหลัก 4 ส่วนของ IoT",
+                meaning: "อุปกรณ์เซนเซอร์ -> เครือข่ายและการเชื่อมต่อ -> การประมวลผล/จัดเก็บ -> การแสดงผล",
+                question: "ข้อใดเรียงลำดับองค์ประกอบหลัก 4 ส่วนของระบบ IoT ได้ถูกต้อง?",
+                answer: "อุปกรณ์เซนเซอร์ -> เครือข่ายและการเชื่อมต่อ -> การประมวลผล/จัดเก็บ -> การแสดงผล",
+                options: [
+                    "อุปกรณ์เซนเซอร์ -> เครือข่ายและการเชื่อมต่อ -> การประมวลผล/จัดเก็บ -> การแสดงผล",
+                    "การแสดงผล -> อุปกรณ์เซนเซอร์ -> การประมวลผล/จัดเก็บ -> เครือข่ายและการเชื่อมต่อ",
+                    "เครือข่ายและการเชื่อมต่อ -> การแสดงผล -> อุปกรณ์เซนเซอร์ -> การประมวลผล/จัดเก็บ",
+                    "การประมวลผล/จัดเก็บ -> เครือข่ายและการเชื่อมต่อ -> การแสดงผล -> อุปกรณ์เซนเซอร์"
+                ]
+            }
+        ];
+
+        // ตัวแปรสถานะ
+        let currentCardIndex = 0;
+        let isCardFlipped = false;
+
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+        let hasAnsweredCurrent = false;
+        let shuffledQuizData = [];
+
+        // เริ่มต้นทำงานเมื่อโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderFlashcard();
+            initQuiz();
+        });
+
+        // สลับโหมด
+        function switchMode(mode) {
+            const tabFc = document.getElementById('tab-flashcard');
+            const tabQuiz = document.getElementById('tab-quiz');
+            const secFc = document.getElementById('section-flashcard');
+            const secQuiz = document.getElementById('section-quiz');
+
+            if (mode === 'flashcard') {
+                tabFc.className = "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm cursor-pointer";
+                tabQuiz.className = "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all text-slate-600 hover:text-indigo-600 cursor-pointer";
+                secFc.classList.remove('hidden');
+                secQuiz.classList.add('hidden');
+            } else {
+                tabQuiz.className = "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm cursor-pointer";
+                tabFc.className = "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all text-slate-600 hover:text-indigo-600 cursor-pointer";
+                secQuiz.classList.remove('hidden');
+                secFc.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // โหมดแฟลชการ์ด
+        // ==========================================
+        function renderFlashcard() {
+            const item = iotData[currentCardIndex];
+            const cardInner = document.getElementById('flashcard-inner');
+            
+            isCardFlipped = false;
+            cardInner.classList.remove('rotate-y-180');
+
+            document.getElementById('fc-counter').textContent = `${currentCardIndex + 1}/${iotData.length}`;
+            document.getElementById('fc-front-text').textContent = item.term;
+            document.getElementById('fc-back-text').textContent = item.meaning;
+
+            document.getElementById('btn-prev-card').disabled = (currentCardIndex === 0);
+            document.getElementById('btn-next-card').disabled = (currentCardIndex === iotData.length - 1);
+        }
+
+        function flipCard() {
+            const cardInner = document.getElementById('flashcard-inner');
+            isCardFlipped = !isCardFlipped;
+            if (isCardFlipped) {
+                cardInner.classList.add('rotate-y-180');
+            } else {
+                cardInner.classList.remove('rotate-y-180');
+            }
+        }
+
+        function nextCard() {
+            if (currentCardIndex < iotData.length - 1) {
+                currentCardIndex++;
+                renderFlashcard();
+            }
+        }
+
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                renderFlashcard();
+            }
+        }
+
+        // ==========================================
+        // โหมดแบบทดสอบ
+        // ==========================================
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function initQuiz() {
+            currentQuizIndex = 0;
+            quizScore = 0;
+            shuffledQuizData = iotData.map(item => ({
+                ...item,
+                shuffledOptions: shuffleArray(item.options)
+            }));
+
+            document.getElementById('quiz-play-area').classList.remove('hidden');
+            document.getElementById('quiz-result-area').classList.add('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            hasAnsweredCurrent = false;
+            const currentQ = shuffledQuizData[currentQuizIndex];
+
+            document.getElementById('quiz-current-num').textContent = currentQuizIndex + 1;
+            document.getElementById('quiz-score').textContent = quizScore;
+            const progressPercent = ((currentQuizIndex + 1) / shuffledQuizData.length) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPercent}%`;
+
+            document.getElementById('quiz-question-text').textContent = currentQ.question;
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('btn-next-question').classList.add('hidden');
+
+            const optionsContainer = document.getElementById('quiz-options-container');
+            optionsContainer.innerHTML = '';
+
+            const labels = ['ก', 'ข', 'ค', 'ง'];
+            currentQ.shuffledOptions.forEach((optionText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition flex items-start gap-3 cursor-pointer group";
+                btn.onclick = () => selectAnswer(btn, optionText);
+
+                btn.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-indigo-100 text-slate-600 group-hover:text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0 mt-0.5 transition">
+                        ${labels[idx]}
+                    </span>
+                    <span class="text-sm sm:text-base text-slate-700 font-medium leading-snug">${optionText}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(selectedBtn, selectedText) {
+            if (hasAnsweredCurrent) return;
+            hasAnsweredCurrent = true;
+
+            const currentQ = shuffledQuizData[currentQuizIndex];
+            const isCorrect = (selectedText === currentQ.answer);
+            const allButtons = document.getElementById('quiz-options-container').querySelectorAll('button');
+
+            allButtons.forEach(btn => {
+                btn.classList.remove('hover:border-indigo-400', 'hover:bg-indigo-50/50', 'cursor-pointer');
+                btn.classList.add('cursor-default');
+                const btnText = btn.querySelector('span:last-child').textContent;
+
+                if (btnText === currentQ.answer) {
+                    btn.classList.remove('border-slate-200');
+                    btn.classList.add('border-emerald-500', 'bg-emerald-50');
+                    btn.querySelector('span:first-child').className = "w-7 h-7 rounded-lg bg-emerald-500 text-white font-bold text-sm flex items-center justify-center shrink-0 mt-0.5";
+                } else if (btn === selectedBtn && !isCorrect) {
+                    btn.classList.remove('border-slate-200');
+                    btn.classList.add('border-rose-500', 'bg-rose-50');
+                    btn.querySelector('span:first-child').className = "w-7 h-7 rounded-lg bg-rose-500 text-white font-bold text-sm flex items-center justify-center shrink-0 mt-0.5";
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            });
+
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackExp = document.getElementById('feedback-explanation');
+
+            feedbackBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'bg-rose-50', 'text-rose-900');
+
+            if (isCorrect) {
+                quizScore++;
+                document.getElementById('quiz-score').textContent = quizScore;
+                feedbackBox.classList.add('bg-emerald-50', 'text-emerald-900');
+                feedbackIcon.innerHTML = `<i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-600"></i>`;
+                feedbackTitle.textContent = "ถูกต้อง";
+            } else {
+                feedbackBox.classList.add('bg-rose-50', 'text-rose-900');
+                feedbackIcon.innerHTML = `<i data-lucide="x-circle" class="w-6 h-6 text-rose-600"></i>`;
+                feedbackTitle.textContent = "ไม่ถูกต้อง";
+            }
+
+            feedbackExp.textContent = currentQ.meaning;
+            lucide.createIcons();
+
+            const nextBtn = document.getElementById('btn-next-question');
+            const nextBtnText = document.getElementById('btn-next-q-text');
+            nextBtn.classList.remove('hidden');
+            nextBtnText.textContent = (currentQuizIndex === shuffledQuizData.length - 1) ? "ดูผลคะแนน" : "ข้อถัดไป";
+        }
+
+        function nextQuestion() {
+            if (currentQuizIndex < shuffledQuizData.length - 1) {
+                currentQuizIndex++;
+                renderQuestion();
+            } else {
+                showQuizResult();
+            }
+        }
+
+        function showQuizResult() {
+            document.getElementById('quiz-play-area').classList.add('hidden');
+            document.getElementById('quiz-result-area').classList.remove('hidden');
+            document.getElementById('final-score').textContent = quizScore;
+
+            const msgEl = document.getElementById('result-message');
+            if (quizScore >= 8) {
+                msgEl.textContent = "ยอดเยี่ยมมาก! เข้าใจเนื้อหาได้เป็นอย่างดี";
+            } else if (quizScore >= 5) {
+                msgEl.textContent = "ทำได้ดี สามารถทบทวนเพิ่มเติมในโหมดแฟลชการ์ดได้";
+            } else {
+                msgEl.textContent = "ลองทบทวนในโหมดแฟลชการ์ดแล้วกลับมาทำใหม่อีกครั้ง";
+            }
+        }
+
+        function restartQuiz() {
+            initQuiz();
+        }
+    </script>
+</body>
+</html>
